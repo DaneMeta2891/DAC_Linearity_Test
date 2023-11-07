@@ -1,15 +1,14 @@
 import socket
 from socket import timeout
 
-SCOPE_IP = "169.254.89.217"
 PORT = 5025
 
-class scopeCommunincation:
+class scopeConnectionUtil:
     def __init__(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.settimeout(2)
+        self.s.settimeout(4)
     
-    def connect(self):
+    def connect(self, SCOPE_IP):
         self.s.connect((SCOPE_IP, PORT))
     
     def send(self, msg):
