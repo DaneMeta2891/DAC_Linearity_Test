@@ -60,13 +60,26 @@ class DAC_Connection_Util:
                 else:
                     self.send_command(userCmd)
             else:
+                self.s.close()
                 break
-        self.s.close()
     
-    def send_command(self, command_string):
-        self.s.flush()
-        self.s.write((":" + command_string + "\r\n").encode())
-        print(self.s.readlines())
+    def send_command(self, command_string, loop_until_success = False):
+        for attempt_num in range(5):
+            if (attempt_num > 0):
+                print("Command error, attempt number: " + str(attempt_num + 1))
+            
+            self.s.flush()
+            self.s.write((":" + command_string + "\r\n").encode())
+
+            #generate list of command errors, return false if a command failed
+            error_list = [odd_element for odd_element in self.s.readlines()[1::2] if (odd_element.decode()[-5:-2] != "ack")]
+            if not(loop_until_success):
+                return False if len(error_list) > 0 else True
+            elif (loop_until_success and len(error_list) == 0):
+                return True
+            
+            #short delay before second attempt
+            time.sleep(2)
     
     def extract_return_float(self, command_string):
         self.s.flush()
@@ -88,25 +101,23 @@ class DAC_Connection_Util:
         self.send_command("set a-l=0")
 
         #disable LCOS then wait
+        
         self.send_command("set en_lcos=0")
         time.sleep(disable_time)
 
         #enable LCOS then wait until it's ready to receive commands again
         self.send_command("set en_lcos=1")
         #play with this value to garuntee no error, or check for ack string in return call else retry
+        #once lcos has been re-enabled there is no need to re-able LEDs with a-l
         time.sleep(5)
         self.send_command("set mode=5")
-
-        #re-enable LEDs
-        self.send_command("set a-l=1")
 
         return
     
     def generate_DAC_char_xlsx(self, output_file_name):
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.append([])
-        ws.append([1, 2, 3])
+        ws.append(["Enter","Column","Headers","Here"])
         wb.save(output_file_name + ".xlsx")
 
 DAC_Connection_Util()
