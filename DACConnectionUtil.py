@@ -65,18 +65,17 @@ class DAC_Connection_Util:
     
     def send_command(self, command_string, loop_until_success = False):
         for attempt_num in range(5):
-            if (attempt_num > 0):
-                print("Command error, attempt number: " + str(attempt_num + 1))
-            
             self.s.flush()
             self.s.write((":" + command_string + "\r\n").encode())
 
-            #generate list of command errors, return false if a command failed
+            #check for errors the return or continue to retry until attempt limit is reached
             error_list = [odd_element for odd_element in self.s.readlines()[1::2] if (odd_element.decode()[-5:-2] != "ack")]
             if not(loop_until_success):
                 return False if len(error_list) > 0 else True
             elif (loop_until_success and len(error_list) == 0):
                 return True
+            else:
+                print("Unable to detect command ack, retry attempt " + str(attempt_num + 1))
             
             #short delay before second attempt
             time.sleep(2)
