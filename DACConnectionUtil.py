@@ -56,14 +56,17 @@ class DAC_Connection_Util:
             userCmd = input("Enter Command: ")
             if (userCmd != ""):
                 if (userCmd[0] == 'r'):
-                    print(self.extract_return_float(userCmd[1:]))
+                    print(self.extract_return_val(userCmd[1:]))
+                elif (userCmd[0] == 'c'):
+                    print("Cooling LCOS")
+                    self.cool_LCOS()
                 else:
-                    self.send_command(userCmd, False, True)
+                    self.send_command(userCmd, True)
             else:
                 self.s.close()
                 break
     
-    def send_command(self, command_string, loop_until_success = False, debug_flag=False):
+    def send_command(self, command_string, debug_flag=False, loop_until_success = False):
         for attempt_num in range(5):
             self.s.flush()
             self.s.write((":" + command_string + "\r\n").encode())
@@ -85,23 +88,24 @@ class DAC_Connection_Util:
             #short delay before second attempt
             time.sleep(1)
     
-    def extract_return_float(self, command_string):
+    def extract_return_val(self, command_string):
         self.s.flush()
         self.s.write((":" + command_string + "\r\n").encode())
         try:
             return self.s.readlines()[0].decode().strip()
         except:
             print("Output format not recognized")
-            return -1.0
+            return -1
     
     def check_LCOS_temp(self, temp_threshold=60):
-        if (float(self.extract_return_float("get temp-lc")) > temp_threshold):
+        if (float(self.extract_return_val("get temp-lc")) > temp_threshold):
             return True
         else:
             return False
 
+    #todo: test cool-lcos with debug flag set to true for each command
     def cool_LCOS(self, disable_time=20):
-        print("Disabling LCOS and cool for " + str(disable_time) + "seconds")
+        print("Disabling LCOS for " + str(disable_time) + " seconds")
 
         #set current to LEDs to zero
         self.send_command("set ri=0:set gi=0:set bi=0")
@@ -113,8 +117,24 @@ class DAC_Connection_Util:
         #enable LCOS then wait until it's ready to receive commands again
         self.send_command("set en_lcos=1")
         time.sleep(5)
-        self.send_command("set mode=5", True)
+        self.send_command("set mode=5", False, True)
     
+    def get_DAC_increment(self, led_color, current_mode):
+        inc_const = 0.1 if (current_mode.lower() == "hc") else 0.01
+        current_value = 3 if (current_mode.lower() == "hc") else 1
+        color_dict = {"red":"ri", "green":"gi", "blue":"bi"}
+
+        self.send_command("set " + color_dict[led_color] + "=" + str(current_value))  
+        current_value = initial_current_value = float(self.extract_return_val("get " + color_dict[led_color]))
+        DAC_value = int(self.extract_return_val("get " + color_dict[led_color] + "-ad"))
+        
+        while (DAC_value + 1 != int(self.extract_return_val("get " + color_dict[led_color] + "-ad"))):
+            current_value += inc_const
+            self.send_command("set " + color_dict[led_color] + "=" + format(current_value, "0.2f"), True, False)
+        current_value = float(self.extract_return_val("get " + color_dict[led_color]))
+        
+        return current_value - initial_current_value
+
     #generates .xlsx of current (mA) values for any given DAC value
     def generate_DAC_char_xlsx(self, output_file_name):
         wb = openpyxl.Workbook()
@@ -135,7 +155,6 @@ class DAC_Connection_Util:
                     #cool LCOS if temp is above threshold
                     if (self.check_LCOS_temp()):
                         self.cool_LCOS()
-                    #
 
         wb.save(output_file_name + ".xlsx")
 
