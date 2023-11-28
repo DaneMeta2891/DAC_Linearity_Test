@@ -119,13 +119,10 @@ class DAC_Connection_Util:
         time.sleep(5)
         self.send_command("set mode=5", False, True)
     
-    #increment current until next DAC value is reached, then return the increment value
-    #will be called if when incrementing the DAC value using the previous increment value
-    #sets the DAC to an unexpected value (!= previous_DAC_value + 1)
+    #assume 0.33 or 0.03 inc value and move this functionality to within generate_DAC_char_xlsx
+    #
     def increment_DAC_value(self, led_color, current_mode, DAC_current_value):
-        
-        
-
+        #continue moving useful sections of this function into generate_DAC_char_xlsx
         self.send_command("set " + color_dict[led_color] + "=" + str(current_value))  
         current_value = initial_current_value = float(self.extract_return_val("get " + color_dict[led_color]))
         DAC_value = int(self.extract_return_val("get " + color_dict[led_color] + "-ad"))
@@ -155,6 +152,7 @@ class DAC_Connection_Util:
             inc_const = 0.33 if (mode == "HC_Mode") else 0.03
             self.send_command("set lc-lowc=" + str(0 if (mode == "HC_Mode") else 1), False, True)
             for color in ("red", "green", "blue"):
+                current_value = 0
                 #define variable to store current(mA) within loop
                 for DAC_value in range(1024):
                     #cool LCOS if temp is above threshold
