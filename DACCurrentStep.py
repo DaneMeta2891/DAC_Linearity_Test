@@ -1,11 +1,6 @@
 import openpyxl
 from argparse import ArgumentParser, ArgumentError
 
-#wb = openpyxl.load_workbook("DAC_Linearity.xlsx", data_only=True)
-#sheet = wb.active
-#sheet['b4'] = "cell_value"
-#print(sheet['b4'].value)
-
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debugging output")

@@ -120,7 +120,6 @@ class DAC_Connection_Util:
         self.send_command("set mode=5", False, True)
     
     #assume 0.33 or 0.03 inc value and move this functionality to within generate_DAC_char_xlsx
-    #
     def increment_DAC_value(self, led_color, current_mode, DAC_current_value):
         #continue moving useful sections of this function into generate_DAC_char_xlsx
         self.send_command("set " + color_dict[led_color] + "=" + str(current_value))  
@@ -128,7 +127,7 @@ class DAC_Connection_Util:
         DAC_value = int(self.extract_return_val("get " + color_dict[led_color] + "-ad"))
         
         while (DAC_value + 1 != int(self.extract_return_val("get " + color_dict[led_color] + "-ad"))):
-            current_value += inc_const
+            current_value += inc_coefficient
             self.send_command("set " + color_dict[led_color] + "=" + format(current_value, "0.2f"), True, False)
         current_value = float(self.extract_return_val("get " + color_dict[led_color]))
         
@@ -145,14 +144,14 @@ class DAC_Connection_Util:
 
         #constants for incrementation
         row_offset = 4
-        columns = {"LC_Mode" : {"Red":"B", "Green":"C", "Blue":"D"}, "HC_Mode" : {"Red":"E", "Green":"F", "Blue":"G"}}
+        columns = {"LC_Mode" : {"Red":"b", "Green":"c", "Blue":"d"}, "HC_Mode" : {"Red":"e", "Green":"f", "Blue":"g"}}
         colors = {"red":"ri", "green":"gi", "blue":"bi"}
 
 
         #iterate through all possible permutations to fill out spreadsheet
         self.send_command("set ri=0:set gi=0:set bi=0")
         for mode in ("LC_Mode", "HC_Mode"):
-            inc_const = 0.33 if (mode == "HC_Mode") else 0.03
+            inc_coefficient = 0.33 if (mode == "HC_Mode") else 0.03
             self.send_command("set lc-lowc=" + str(0 if (mode == "HC_Mode") else 1), False, True)
             for color in ("red", "green", "blue"):
                 current_value = 0
@@ -160,10 +159,13 @@ class DAC_Connection_Util:
                     #cool LCOS if temp is above threshold
                     if (self.check_LCOS_temp()):
                         self.cool_LCOS()
-                    self.send_command("set " + colors[color] + "=" + format(current_value, '0.2f'))
-                    current_value = float(self.extract_return_val("get " + colors[color]))
                     
-                    current_value += inc_const
+                    #todo, check if current values reset after LCOS disable/enable
+                    #set current value for given DAC value and record current/DAC value
+                    self.send_command("set " + colors[color] + "=" + format(current_value, '0.2f'))
+                    ws[columns[color] + str(row_offset + DAC_value)] = self.extract_return_val("get " + colors[color]) + "_" + self.extract_return_val("get " + colors[color] + "-ad")
+                    
+                    current_value += inc_coefficient
 
         wb.save(output_file_name + ".xlsx")
 
