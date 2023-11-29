@@ -144,20 +144,26 @@ class DAC_Connection_Util:
         ws.append(["DAC_Value","Red","Green","Blue","Red","Green","Blue"])
 
         #constants for incrementation
-        color_dict = {"red":"ri", "green":"gi", "blue":"bi"}
+        row_offset = 4
+        columns = {"LC_Mode" : {"Red":"B", "Green":"C", "Blue":"D"}, "HC_Mode" : {"Red":"E", "Green":"F", "Blue":"G"}}
+        colors = {"red":"ri", "green":"gi", "blue":"bi"}
+
 
         #iterate through all possible permutations to fill out spreadsheet
-        #set all LED current values to zero
+        self.send_command("set ri=0:set gi=0:set bi=0")
         for mode in ("LC_Mode", "HC_Mode"):
             inc_const = 0.33 if (mode == "HC_Mode") else 0.03
             self.send_command("set lc-lowc=" + str(0 if (mode == "HC_Mode") else 1), False, True)
             for color in ("red", "green", "blue"):
                 current_value = 0
-                #define variable to store current(mA) within loop
                 for DAC_value in range(1024):
                     #cool LCOS if temp is above threshold
                     if (self.check_LCOS_temp()):
                         self.cool_LCOS()
+                    self.send_command("set " + colors[color] + "=" + format(current_value, '0.2f'))
+                    current_value = float(self.extract_return_val("get " + colors[color]))
+                    
+                    current_value += inc_const
 
         wb.save(output_file_name + ".xlsx")
 
