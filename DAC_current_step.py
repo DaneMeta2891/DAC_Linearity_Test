@@ -1,4 +1,3 @@
-import openpyxl
 from argparse import ArgumentParser, ArgumentError
 
 def parse_args():
@@ -13,21 +12,21 @@ def parse_args():
     dac_range = parser.add_argument("--dac_range", type=str, help="DAC range, format: ALL or (start_val)-(end_val)")
     display_mode = parser.add_argument("--display_mode", type=str, nargs="+", help="Display mode, MIPI or l-grid (1-8)")
 
-    #check if not(--RUN_ALL is used, ensure all other args are provided)
-
     args = parser.parse_args()
     test_settings = []
+
     if args.RUN_ALL:
-        #ask what l-grid setting to use
         test_settings.append(["LC", "ALL", [0,1023], "l-grid=2"])
         test_settings.append(["HC", "ALL", [0,1023], "l-grid=2"])
-    else:
+    elif (args.current_mode != None and args.dac_to_display != None and args.dac_range != None and args.display_mode != None):
         test_settings.append([
             args.current_mode,
             args.dac_to_display,
             parse_DAC_range(args.dac_range, dac_range),
             parse_display_mode(args.display_mode, display_mode)
         ])
+    else:
+        print("Missing --current_mode, --dac_to_display, --dac_range and --display_mode; or --RUN_ALL")
 
     return test_settings
 
@@ -56,5 +55,8 @@ def parse_display_mode(display_Args, display_mode_arg):
     else:
         raise ArgumentError(display_mode_arg, "Error, invalid argument: use \"MIPI\" or \"l-grid (1-8)\"")
 
+def main():
+    test_settings = parse_args()
+    print(test_settings)
 
-parse_args()
+main()

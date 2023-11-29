@@ -2,21 +2,6 @@ import serial
 import serial.tools.list_ports
 import time
 import openpyxl
-from argparse import ArgumentParser
-
-#enable/disable projection:
-#set a-l=0 (off) (or rgb for individual colors)
-#get ri: gets current (mA) (rgb for different colors)
-#get ri-ad: gets DAC value
-#set ri=20: sets ri value
-#if temp value hits 60*c wait 1 min to allow the device to cool down
-#get temp-(rgb) db(DDB) or lc(LCOS), get use LCOS value for temp control
-#todo:
-#use set en-lcos=0 (1 for enable) to disable LCOS for cooling down
-#ask what lc-init does, why both lc-init and en-lcos exist
-#lc-lowc=1 (1 for low current mode, 0 for normal current mode)
-#after enabling LC mode (set lc-lowc=1) all LEDs will be set to the LC mode current corresponding to the DAC value
-#that the LED was set to in HC mode, and vice versa
 
 class DAC_Connection_Util:
     BAUDRATE = 115200
@@ -103,7 +88,6 @@ class DAC_Connection_Util:
         else:
             return False
 
-    #todo: test cool-lcos with debug flag set to true for each command
     def cool_LCOS(self, disable_time=20):
         print("Disabling LCOS for " + str(disable_time) + " seconds")
 
@@ -118,20 +102,6 @@ class DAC_Connection_Util:
         self.send_command("set en_lcos=1")
         time.sleep(5)
         self.send_command("set mode=5", False, True)
-    
-    #assume 0.33 or 0.03 inc value and move this functionality to within generate_DAC_char_xlsx
-    def increment_DAC_value(self, led_color, current_mode, DAC_current_value):
-        #continue moving useful sections of this function into generate_DAC_char_xlsx
-        self.send_command("set " + color_dict[led_color] + "=" + str(current_value))  
-        current_value = initial_current_value = float(self.extract_return_val("get " + color_dict[led_color]))
-        DAC_value = int(self.extract_return_val("get " + color_dict[led_color] + "-ad"))
-        
-        while (DAC_value + 1 != int(self.extract_return_val("get " + color_dict[led_color] + "-ad"))):
-            current_value += inc_coefficient
-            self.send_command("set " + color_dict[led_color] + "=" + format(current_value, "0.2f"), True, False)
-        current_value = float(self.extract_return_val("get " + color_dict[led_color]))
-        
-        return current_value - initial_current_value
 
     #generates .xlsx of current (mA) values for any given DAC value
     def generate_DAC_char_xlsx(self, output_file_name):
@@ -142,30 +112,37 @@ class DAC_Connection_Util:
         ws.append(["","","LC_Mode","","","HC_Mode"])
         ws.append(["DAC_Value","Red","Green","Blue","Red","Green","Blue"])
 
-        #constants for incrementation
+        #constants
         row_offset = 4
+        DAC_range = 24
         columns = {"LC_Mode" : {"Red":"b", "Green":"c", "Blue":"d"}, "HC_Mode" : {"Red":"e", "Green":"f", "Blue":"g"}}
         colors = {"red":"ri", "green":"gi", "blue":"bi"}
 
+        #write DAC_value column
+        for i in range(DAC_range):
+            ws['a' + str(i + row_offset)] = str(i + 1)
 
         #iterate through all possible permutations to fill out spreadsheet
-        self.send_command("set ri=0:set gi=0:set bi=0")
+        self.send_command("set ri=0:set gi=0:set bi=0", True)
         for mode in ("LC_Mode", "HC_Mode"):
             inc_coefficient = 0.33 if (mode == "HC_Mode") else 0.03
             self.send_command("set lc-lowc=" + str(0 if (mode == "HC_Mode") else 1), False, True)
             for color in ("red", "green", "blue"):
-                current_value = 0
-                for DAC_value in range(1024):
+                for DAC_value in range(DAC_range):
                     #cool LCOS if temp is above threshold
                     if (self.check_LCOS_temp()):
                         self.cool_LCOS()
                     
-                    #todo, check if current values reset after LCOS disable/enable
+                    #todo, check if current values reset after LCOS disable/enable (Working on the assumption that they do not)
+                    #todo, disable debug flags or link to -d arg in final script version
+
                     #set current value for given DAC value and record current/DAC value
-                    self.send_command("set " + colors[color] + "=" + format(current_value, '0.2f'))
-                    ws[columns[color] + str(row_offset + DAC_value)] = self.extract_return_val("get " + colors[color]) + "_" + self.extract_return_val("get " + colors[color] + "-ad")
+                    self.send_command("set " + colors[color] + "=" + format(inc_coefficient * DAC_value, '0.2f'), True)
+
+                    #get and write current/DAC value to excel sheet
+                    ws[columns[color] + str(row_offset + DAC_value)] = self.extract_return_val("get " + colors[color]) + "_" + str(int(self.extract_return_val("get " + colors[color] + "-ad")) + 1)
                     
-                    current_value += inc_coefficient
+                self.send_command("set " + colors[color] + "=0", True)
 
         wb.save(output_file_name + ".xlsx")
 
