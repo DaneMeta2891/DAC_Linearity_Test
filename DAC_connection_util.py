@@ -114,6 +114,8 @@ class DAC_Connection_Util:
 
         #constants
         row_offset = 4
+        
+        #todo, change to 1024 once debug is complete
         DAC_range = 24
         columns = {"LC_Mode" : {"Red":"b", "Green":"c", "Blue":"d"}, "HC_Mode" : {"Red":"e", "Green":"f", "Blue":"g"}}
         colors = {"red":"ri", "green":"gi", "blue":"bi"}
