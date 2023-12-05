@@ -1,15 +1,22 @@
 import socket
 from socket import timeout
 
-PORT = 5025
-
 class scopeConnectionUtil:
+    PORT = 5025
+    TIMEOUT = 2
+
     def __init__(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.settimeout(4)
+        self.s.settimeout(self.TIMEOUT)
     
-    def connect(self, SCOPE_IP):
-        self.s.connect((SCOPE_IP, PORT))
+    def connect(self, scope_IP):
+        for _ in range(5):
+            try:
+                self.s.connect((scope_IP, self.PORT))
+                return True
+            except:
+                print("Error connecting to scope, retrying...")
+        return False
     
     def send(self, msg):
         self.s.send((msg + "\n").encode())
@@ -22,6 +29,6 @@ class scopeConnectionUtil:
         except timeout:
             print("Socket Timeout")
             return False
-    
+        
     def disconnect(self):
         self.s.close()
