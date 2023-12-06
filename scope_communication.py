@@ -21,7 +21,7 @@ class scopeConnectionUtil:
     def send(self, msg):
         self.s.send((msg + "\n").encode())
         
-    def sendRecv(self, msg):
+    def send_recv(self, msg):
         self.s.send((msg + "\n").encode())
         try:
             print(self.s.recv(1024).decode().rstrip("\n"))

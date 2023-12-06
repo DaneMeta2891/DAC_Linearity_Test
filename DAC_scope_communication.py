@@ -1,19 +1,19 @@
 from scope_communication import scopeConnectionUtil
 
 class scope_control:
-    SCOPE_IP = ""
-    def __init__(self):
+    def __init__(self, scope_ip):
         #establish and verify scope connection
         self.scope_com = scopeConnectionUtil()
-        self.scope_com.connect(self.SCOPE_IP)
-        return
+        if not(self.scope_com.connect(scope_ip)):
+            print("Unable to connect to scope with provided IP")
     
+    #configure scope
     def setup_scope_measurements(self):
-        #reset scope then setup scope measurements
+        self.scope_com.send("*RST")
         return
     
+    #get and parse measurement data
     def get_measurement_data(self):
-        #get and parse current value from measurements
         return
     
     def test_interface(self):
@@ -21,9 +21,11 @@ class scope_control:
             user_cmd = input("Enter Command: ")
             if (user_cmd != ""):
                 if (user_cmd[0] == 'r'):
-                    print()
+                    print(self.scope_com.send_recv(user_cmd[1:]))
                 else:
-                    self.send_command()
+                    self.scope_com.send(user_cmd)
             else:
-                self.s.close()
+                self.scope_com.disconnect()
                 break
+
+scope_control("169.254.61.242").test_interface()

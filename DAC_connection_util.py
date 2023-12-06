@@ -80,26 +80,35 @@ class DAC_Connection_Util:
             return self.s.readlines()[0].decode().strip()
         except:
             print("Output format not recognized")
-            return -1
+            return "0"
     
+    #todo: set limit to number of retry attempts
     def check_LCOS_temp(self, temp_threshold=60):
-        if (float(self.extract_return_val("get temp-lc")) > temp_threshold):
+        for _ in range(5):
+            try:
+                temp = float(self.extract_return_val("get temp-lc"))
+                if (temp < 0):
+                    print("ValueError: invalid return value from \'get temp-lc\'")
+                else:
+                    break
+            except ValueError:
+                print("ValueError: unexpected return value from \'get temp-lc\'")
+        if (temp > temp_threshold):
             return True
         else:
             return False
 
-    def cool_LCOS(self, disable_time=20):
+    def cool_LCOS(self, disable_time=30):
         print("Disabling LCOS for " + str(disable_time) + " seconds")
-
-        #set current to LEDs to zero
-        self.send_command("set ri=0:set gi=0:set bi=0")
+        #disable current
+        self.send_command("set ri=0:set bi=0:set gi=0")
 
         #disable LCOS then wait until it cools down
-        self.send_command("set en_lcos=0")
+        self.send_command("set en-lcos=0")
         time.sleep(disable_time)
 
         #enable LCOS then wait until it's ready to receive commands again
-        self.send_command("set en_lcos=1")
+        self.send_command("set en-lcos=1")
         time.sleep(5)
         self.send_command("set mode=5", False, True)
 
@@ -113,36 +122,36 @@ class DAC_Connection_Util:
         ws.append(["DAC_Value","Red","Green","Blue","Red","Green","Blue"])
 
         #constants
-        row_offset = 4
+        row_offset = 3
         
         #todo, change to 1024 once debug is complete
-        DAC_range = 24
-        columns = {"LC_Mode" : {"Red":"b", "Green":"c", "Blue":"d"}, "HC_Mode" : {"Red":"e", "Green":"f", "Blue":"g"}}
+        DAC_range = 1024
+        columns = {"LC_Mode" : {"red":"b", "green":"c", "blue":"d"}, "HC_Mode" : {"red":"e", "green":"f", "blue":"g"}}
         colors = {"red":"ri", "green":"gi", "blue":"bi"}
 
         #write DAC_value column
         for i in range(DAC_range):
-            ws['a' + str(i + row_offset)] = str(i + 1)
+            ws['a' + str(i + row_offset)] = str(i)
 
         #iterate through all possible permutations to fill out spreadsheet
-        self.send_command("set ri=0:set gi=0:set bi=0", True)
+        self.send_command("set l-grid=2")
+        self.send_command("set ri=0:set gi=0:set bi=0")
+
         for mode in ("LC_Mode", "HC_Mode"):
             inc_coefficient = 0.33 if (mode == "HC_Mode") else 0.03
             self.send_command("set lc-lowc=" + str(0 if (mode == "HC_Mode") else 1), False, True)
             for color in ("red", "green", "blue"):
                 for DAC_value in range(DAC_range):
-                    #cool LCOS if temp is above threshold
-                    if (self.check_LCOS_temp()):
-                        self.cool_LCOS()
-                    
-                    #todo, check if current values reset after LCOS disable/enable (Working on the assumption that they do not)
-                    #todo, disable debug flags or link to -d arg in final script version
+                    #cool LCOS if temp is above threshold every 12 steps
+                    if (DAC_value % 8 == 0):
+                        if (self.check_LCOS_temp()):
+                            self.cool_LCOS()
 
                     #set current value for given DAC value and record current/DAC value
-                    self.send_command("set " + colors[color] + "=" + format(inc_coefficient * DAC_value, '0.2f'), True)
+                    self.send_command("set " + colors[color] + "=" + format(inc_coefficient * DAC_value, '0.2f'))
 
                     #get and write current/DAC value to excel sheet
-                    ws[columns[color] + str(row_offset + DAC_value)] = self.extract_return_val("get " + colors[color]) + "_" + str(int(self.extract_return_val("get " + colors[color] + "-ad")) + 1)
+                    ws[columns[mode][color] + str(row_offset + DAC_value)] = self.extract_return_val("get " + colors[color]) + "_" + self.extract_return_val("get " + colors[color] + "-ad")
                     
                 self.send_command("set " + colors[color] + "=0", True)
 
