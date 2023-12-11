@@ -24,11 +24,9 @@ class scopeConnectionUtil:
     def send_recv(self, msg):
         self.s.send((msg + "\n").encode())
         try:
-            print(self.s.recv(1024).decode().rstrip("\n"))
-            return
+            return self.s.recv(1024).decode().rstrip("\n")
         except timeout:
-            print("Socket Timeout")
-            return False
+            return "Socket timeout failure"
         
     def disconnect(self):
         self.s.close()
