@@ -27,6 +27,14 @@ class scopeConnectionUtil:
             return self.s.recv(1024).decode().rstrip("\n")
         except timeout:
             return "Socket timeout failure"
+    
+    def flush_buffer(self):
+        while (True):
+            try:
+                print(self.s.recv(1024))
+            except timeout:
+                print("Completed Buffer Flush")
+                break
         
     def disconnect(self):
         self.s.close()

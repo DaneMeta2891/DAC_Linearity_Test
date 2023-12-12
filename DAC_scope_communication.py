@@ -1,5 +1,8 @@
 from scope_communication import scopeConnectionUtil
 
+#todo, find display on command for measurement statistics window (not necessary but added bonus)
+#todo, enable stat
+#todo automatically configure IP address (if possible)
 class scope_control:
     INVALID_RETURN = "9.9E+37"
     def __init__(self, scope_ip):
@@ -20,13 +23,29 @@ class scope_control:
     def scope_setup_config(self):
         self.scope_com.send("*RST")
         self.set_channel_display([True, False, False, False])
-        #add max and top channel command
+        #clear existing measurements
+        self.scope_com.send(":MEASure1:CLEar")
+        #add desired measurements
         self.scope_com.send(":MEASure:VMAX CHANnel1")
         self.scope_com.send(":MEASure:VTOP CHANnel1")
+        #enable statistics display
+
+    #enable or disable measurement stats display
+    def meas_stats_display(self, display:bool):
+        self.scope_com.send(":MEASure:STATistics:DISPlay " + str(int(display)))
     
+    #reset measurement stat sample count
+    def reset_meas_stats(self):
+        self.scope_com.send(":EMASure:STATistics:RESet")
+
     #get and parse measurement data
-    def get_measurement_data(self):
+    def get_meas_data(self):
         meas_data = self.scope_com.send_recv(":MEASure:RESults?")
+        for data in meas_data.split(","):
+            try:
+                print(float(data))
+            except ValueError:
+                print(data)
 
     #input 4 bool list to enable/disable channelss
     def set_channel_display(self, ch_array:list):
@@ -52,4 +71,4 @@ class scope_control:
                 break
         outFile.close()
 
-scope_control("169.254.185.232").test_interface()
+scope_control("169.254.223.57").test_interface()
