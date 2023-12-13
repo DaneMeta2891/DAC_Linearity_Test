@@ -1,7 +1,6 @@
 from scope_communication import scopeConnectionUtil
 
 #todo, find display on command for measurement statistics window (not necessary but added bonus)
-#todo, enable stat
 #todo automatically configure IP address (if possible)
 class scope_control:
     INVALID_RETURN = "9.9E+37"
@@ -36,7 +35,7 @@ class scope_control:
     
     #reset measurement stat sample count
     def reset_meas_stats(self):
-        self.scope_com.send(":EMASure:STATistics:RESet")
+        self.scope_com.send(":MEASure:STATistics:RESet")
 
     #get and parse measurement data
     def get_meas_data(self):
