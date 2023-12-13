@@ -2,6 +2,11 @@ from scope_communication import scopeConnectionUtil
 
 #todo, find display on command for measurement statistics window (not necessary but added bonus)
 #todo automatically configure IP address (if possible)
+
+#todo, create function to parse meas data:
+#meas data:
+#Maximum(1),+400E-03,+100E-03,+600E-03,+346.129521702867E-03,+49.9185458117796E-03,70521,Top(1),9.9E+37,+400E-03,+400E-03,+400.000000000000E-03,+0.0E+00,19
+#current, min, max, mean, std_dev, count
 class scope_control:
     INVALID_RETURN = "9.9E+37"
     def __init__(self, scope_ip):
@@ -70,4 +75,4 @@ class scope_control:
                 break
         outFile.close()
 
-scope_control("169.254.223.57").test_interface()
+scope_control("169.254.2.204").test_interface()
