@@ -1,14 +1,7 @@
 from scope_communication import scopeConnectionUtil
 
-#todo, find display on command for measurement statistics window (not necessary but added bonus)
-#todo automatically configure IP address (if possible)
-
-#todo, create function to parse meas data:
-#meas data:
-#return value in volts
-#Maximum(1),+400E-03,+100E-03,+600E-03,+346.129521702867E-03,+49.9185458117796E-03,70521,Top(1),9.9E+37,+400E-03,+400E-03,+400.000000000000E-03,+0.0E+00,19
-#current, min, max, mean, std_dev, count
-#look out for max with greater size than max
+#todo: automatically configure IP address (if possible)
+#todo: create function to config voltage offset/scale based on expected value
 class scope_control:
     INVALID_RETURN = "9.9E+37"
     def __init__(self, scope_ip):
@@ -16,6 +9,11 @@ class scope_control:
         self.scope_com = scopeConnectionUtil()
         if not(self.scope_com.connect(scope_ip)):
             print("Unable to connect to scope with provided IP")
+    
+    #function to config voltage scale/offset based on expected voltage value
+    def vertical_config(self, channel:int, expected_voltage:float):
+        #todo: develop
+        return
     
     #set channel voltage scale
     def set_voltage_scale(self, channel:int, voltage:float):
@@ -29,12 +27,16 @@ class scope_control:
     def scope_setup_config(self):
         self.scope_com.send("*RST")
         self.set_channel_display([True, False, False, False])
+
         #clear existing measurements
         self.scope_com.send(":MEASure1:CLEar")
+
         #add desired measurements
         self.scope_com.send(":MEASure:VMAX CHANnel1")
         self.scope_com.send(":MEASure:VTOP CHANnel1")
+
         #enable statistics display
+        self.meas_stats_display(True)
 
     #enable or disable measurement stats display
     def meas_stats_display(self, display:bool):
@@ -62,7 +64,7 @@ class scope_control:
     #parses out desired statistic (specified by stat_index) from target measurement (specified by target_meas)
     #and returns the value as a float
     #Maximum(1),+400E-03,+100E-03,+600E-03,+346.129521702867E-03,+49.9185458117796E-03,70521,Top(1),9.9E+37,+400E-03,+400E-03,+400.000000000000E-03,+0.0E+00,19
-    #example: get_meas_data("Maximum(1)", 3) would return float("+346.129521702867E-03")
+    #example: get_meas_data("Maximum(1)", 3) returns float("+346.129521702867E-03")
     def get_target_meas_data(self, target_meas, stat_index):
         meas_data = self.scope_com.send_recv(":MEASure:RESults?")
         value_counter = 0
