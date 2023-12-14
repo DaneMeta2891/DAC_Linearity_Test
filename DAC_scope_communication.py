@@ -8,6 +8,7 @@ from scope_communication import scopeConnectionUtil
 #return value in volts
 #Maximum(1),+400E-03,+100E-03,+600E-03,+346.129521702867E-03,+49.9185458117796E-03,70521,Top(1),9.9E+37,+400E-03,+400E-03,+400.000000000000E-03,+0.0E+00,19
 #current, min, max, mean, std_dev, count
+#look out for max with greater size than max
 class scope_control:
     INVALID_RETURN = "9.9E+37"
     def __init__(self, scope_ip):
@@ -43,11 +44,26 @@ class scope_control:
     def reset_meas_stats(self):
         self.scope_com.send(":MEASure:STATistics:RESet")
 
+    #parses out all meas stats and returns dictionary
+    def get_all_meas_data(self):
+        meas_data = self.scope_com.send_recv(":MEASure:RESults?")
+        return_dict = dict()
+        current_key = ""
+        for data in meas_data.split(","):
+            try:
+                converted_data = float(data)
+                if (current_key != ""):
+                    return_dict[current_key].append(converted_data)
+            except ValueError:
+                return_dict[data] = list()
+                current_key = data
+        return return_dict
+
     #parses out desired statistic (specified by stat_index) from target measurement (specified by target_meas)
     #and returns the value as a float
     #Maximum(1),+400E-03,+100E-03,+600E-03,+346.129521702867E-03,+49.9185458117796E-03,70521,Top(1),9.9E+37,+400E-03,+400E-03,+400.000000000000E-03,+0.0E+00,19
     #example: get_meas_data("Maximum(1)", 3) would return float("+346.129521702867E-03")
-    def get_meas_data(self, target_meas, stat_index):
+    def get_target_meas_data(self, target_meas, stat_index):
         meas_data = self.scope_com.send_recv(":MEASure:RESults?")
         value_counter = 0
         target_stat_list = False
@@ -61,7 +77,7 @@ class scope_control:
                 value_counter = 0
                 target_stat_list = True if (data == target_meas) else False
         print("Target measurement not found")
-        return 0
+        return -1
 
     #input 4 bool list to enable/disable channelss
     def set_channel_display(self, ch_array:list):
@@ -86,5 +102,7 @@ class scope_control:
                 self.scope_com.disconnect()
                 break
         outFile.close()
+    
 
-scope_control("169.254.2.204").test_interface()
+control_obj = scope_control("169.254.145.208")
+control_obj.test_interface()
