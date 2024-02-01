@@ -1,8 +1,8 @@
-from scope_communication import scopeConnectionUtil
+from scope_com import scopeConnectionUtil
 
 #todo: automatically configure IP address (if possible)
 #todo: create function to config voltage offset/scale based on expected value
-class scope_control:
+class scopeControl:
     INVALID_RETURN = "9.9E+37"
     def __init__(self, scope_ip):
         #establish and verify scope connection
@@ -93,7 +93,7 @@ class scope_control:
             user_cmd = input("Enter Command: ")
             if (user_cmd != ""):
                 if (user_cmd[0] == 'r'):
-                    outFile.write(user_cmd[1:])
+                    outFile.write(user_cmd[1:] + "\n")
                     scope_return = self.scope_com.send_recv(user_cmd[1:])
                     outFile.write(scope_return)
                     print(scope_return)
@@ -106,5 +106,5 @@ class scope_control:
         outFile.close()
     
 
-control_obj = scope_control("169.254.145.208")
+control_obj = scopeControl("169.254.185.64")
 control_obj.test_interface()
