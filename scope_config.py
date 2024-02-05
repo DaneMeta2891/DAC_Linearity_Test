@@ -1,39 +1,52 @@
 from scope_com import scopeConnectionUtil
+import time
 
-#todo: automatically configure IP address (if possible)
 #todo: create function to config voltage offset/scale based on expected value
 class scopeControl:
     INVALID_RETURN = "9.9E+37"
-    def __init__(self, scope_ip):
-        #establish and verify scope connection
+    def __init__(self):
         self.scope_com = scopeConnectionUtil()
-        if not(self.scope_com.connect(scope_ip)):
-            print("Unable to connect to scope with provided IP")
-    
-    #function to config voltage scale/offset based on expected voltage value
-    def vertical_config(self, channel:int, expected_voltage:float):
-        #todo: develop
+        self.scope_com.connect()
+
+    def trigger_config(self, channel:int, voltage:float):
+        self.scope_com.send(":TRIGger:SOURce " + "CHAN" + str(channel))
+        self.scope_com.send(":TRIGger:LEVel " + format(voltage, '0.4f'))
+        self.scope_com.send()
+
+    #set to 2 ms (fixed)
+    def horizontal_config(self):
         return
     
     #set channel voltage scale
     def set_voltage_scale(self, channel:int, voltage:float):
-        self.scope_com.send(":CHANnel" + str(channel) + ":SCALe " + format(voltage, '0.2f'))
+        self.scope_com.send(":CHANnel" + str(channel) + ":SCALe " + format(voltage, '0.4f'))
     
     #set channel offset scale
     def set_voltage_offset(self, channel:int, voltage:float):
         self.scope_com.send(":CHANnel" + str(channel) + ":OFFSet " + format(voltage, '0.4f'))
     
     #scope setup configuration
-    def scope_setup_config(self):
+    def scope_setup_config(self, channel = 1):
         self.scope_com.send("*RST")
-        self.set_channel_display([True, False, False, False])
+        self.set_channel_display(channel)
 
         #clear existing measurements
         self.scope_com.send(":MEASure1:CLEar")
 
-        #add desired measurements
+        #add measurements
         self.scope_com.send(":MEASure:VMAX CHANnel1")
         self.scope_com.send(":MEASure:VTOP CHANnel1")
+
+        #config high res mode
+        self.set_high_res_mode()
+
+        #50 mv scale with 50 mv offset
+        self.set_voltage_scale(channel, .05)
+        self.set_voltage_offset(channel, .05)
+
+        #configure trigger
+        self.trigger_config(1, 0.01)
+
 
         #enable statistics display
         self.meas_stats_display(True)
@@ -45,6 +58,10 @@ class scopeControl:
     #reset measurement stat sample count
     def reset_meas_stats(self):
         self.scope_com.send(":MEASure:STATistics:RESet")
+    
+    #sets high resolution mode
+    def set_high_res_mode(self):
+        self.scope_com.send(":ACQuire:TYPE HRESolution")
 
     #parses out all meas stats and returns dictionary
     def get_all_meas_data(self):
@@ -81,11 +98,11 @@ class scopeControl:
         print("Target measurement not found")
         return -1
 
-    #input 4 bool list to enable/disable channelss
-    def set_channel_display(self, ch_array:list):
-        for i in range(len(ch_array)):
-            if (ch_array[i]):
-                self.scope_com.send(":CHANnel" + str(i + 1) + ":DISPlay " + str(int(ch_array[i])))
+    #ch_to_enable: enter the channel to enable, disables all other channels
+    def set_channel_display(self, ch_to_enable):
+        for i in range(4):
+            enable = True if (i == ch_to_enable - 1) else False
+            self.scope_com.send(":CHANnel" + str(i + 1) + ":DISPlay " + str(int(enable)))
     
     def test_interface(self):
         outFile = open("Scope_Comm.log", "a")
@@ -106,5 +123,6 @@ class scopeControl:
         outFile.close()
     
 
-control_obj = scopeControl("169.254.185.64")
-control_obj.test_interface()
+control_obj = scopeControl()
+control_obj.scope_setup_config()
+#control_obj.test_interface()

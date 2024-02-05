@@ -2,7 +2,11 @@ import socket
 from socket import timeout
 import subprocess
 
+#part of *IDN return string
 VALID_IDS = ["MSO-X 4054A"]
+
+#needs to be manually altered, check the scope
+HOST_NAME = "a-mx4054a-00115"
 
 class scopeConnectionUtil:
     PORT = 5025
@@ -17,25 +21,29 @@ class scopeConnectionUtil:
     def __exit__(self, *a):
         self.disconnect()
 
-    def get_dynamic_ips(self):
-        dynamic_lines = list()
-        for line in subprocess.run(["arp", "-a"], capture_output=True).stdout.decode().split("\r\n"):
-            if (line.find("dynamic") != -1):
-                dynamic_lines.append([val for val in line.split(" ") if val != ''])
-        return dynamic_lines
+    def check_host_name(self, host_name):
+        if HOST_NAME != host_name:
+            self.edit_host_name(host_name)
 
-    def check_id(self):
-        idn = self.send_recv("*IDN?")
-        return True if idn.split(",")[1] in VALID_IDS else False
+    def edit_host_name(self, host_name):
+        with open("editself.py", 'r') as file:
+            script = file.readlines()
+        with open("editself.py", 'w') as file:
+            for line in script:
+                if (line.find("HOST_NAME = ") != -1 and line.find("write") == -1):
+                    file.write("HOST_NAME = " + "\"" + host_name + "\"\n")
+                else:
+                    file.write(line)
 
-    def check_ips(self):
-        with scopeConnectionUtil() as scope:
-            for val in self.get_dynamic_ips():
-                print(val[0])
-                if (scope.connect(val[0]) and self.check_id(scope)):
-                    return True
+    def get_host_ip(self):
+        try:
+            return socket.gethostbyname(HOST_NAME)
+        except Exception as error:
+            print("error getting scope IP")
+            print("socket error:", error)
 
-    def connect(self, scope_IP):
+    def connect(self):
+        scope_IP = self.get_host_ip()
         try:
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.s.settimeout(self.TIMEOUT)
@@ -43,7 +51,7 @@ class scopeConnectionUtil:
             return True
         except Exception as error:
             self.disconnect()
-            print("Socket Error: ", error)
+            print("connection error: ", error)
         return False
     
     def send(self, msg):
@@ -54,18 +62,17 @@ class scopeConnectionUtil:
         try:
             return self.s.recv(1024).decode().rstrip("\n")
         except timeout:
-            return "Socket timeout failure"
+            return "socket timeout"
+        except Exception as error:
+            return "send_recv error: " + error
     
     def flush_buffer(self):
         while (True):
             try:
                 print(self.s.recv(1024))
             except timeout:
-                print("Completed Buffer Flush")
+                print("buffer flush complete")
                 break
-    
-    def check_socket(self):
-        return self.send_recv("*IDN")
         
     def disconnect(self):
         self.s.close()

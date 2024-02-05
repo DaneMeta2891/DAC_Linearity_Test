@@ -1,11 +1,14 @@
 from argparse import ArgumentParser, ArgumentError
 
+#todo add hostname config option (look into adding additional parsers) to argparser and have it just edit scope_com.py with edit_host funcs
+#todo: add option to configure oscope channel used
 class arg_parser:
     def __init__(self):
         self.parser = ArgumentParser()
         self.parser.add_argument("-d", "--debug", action="store_true", help="Enable debugging output")
+        self.parser.add_argument("-c", "--config", type, help="configure host name")
 
-        self.parser.add_argument("--RUN_ALL", "--run_all", action="store_true", help="Run all DACs on LC and HC mode")
+        self.parser.add_argument("--run_all", action="store_true", help="Run all DACs on LC and HC mode")
 
         self.parser.add_argument("--current_mode", type=str, choices=["LC","HC"], help="Current mode")
         self.parser.add_argument("--dac_to_display", type=str, choices=["red","green","blue","ALL"], help="Target DAC")
@@ -60,3 +63,4 @@ class arg_parser:
                 raise ArgumentError(self.display_mode_arg, "Error, invalid argument: use \"MIPI\" or \"l-grid=(1-8)\"")
         else:
             raise ArgumentError(self.display_mode_arg, "Error, invalid argument: use \"MIPI\" or \"l-grid=(1-8)\"")
+        
