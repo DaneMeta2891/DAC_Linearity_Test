@@ -1,6 +1,5 @@
 import socket
 from socket import timeout
-import subprocess
 
 #part of *IDN return string
 VALID_IDS = ["MSO-X 4054A"]
@@ -8,6 +7,7 @@ VALID_IDS = ["MSO-X 4054A"]
 #scope host name, used to get the IP address of the scope
 HOST_NAME = "a-mx4054a-00115"
 
+#scope communication class
 class scopeConnectionUtil:
     PORT = 5025
     TIMEOUT = 2

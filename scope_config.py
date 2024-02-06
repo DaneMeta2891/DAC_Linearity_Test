@@ -1,6 +1,7 @@
 from scope_com import scopeConnectionUtil
 import time
 
+#scope configuration object
 class scopeControl:
     INVALID_RETURN = "9.9E+37"
     def __init__(self):
@@ -123,10 +124,6 @@ class scopeControl:
                 current_key = data
         return return_dict
 
-    #parses out desired statistic (specified by stat_index) from target measurement (specified by target_meas)
-    #and returns the value as a float
-    #Maximum(1),+400E-03,+100E-03,+600E-03,+346.129521702867E-03,+49.9185458117796E-03,70521,Top(1),9.9E+37,+400E-03,+400E-03,+400.000000000000E-03,+0.0E+00,19
-    #example: get_meas_data("Maximum(1)", 3) returns float("+346.129521702867E-03")
     def get_target_meas_data(self, target_meas:str, stat_index:int):
         '''
         parses out desired statistic from target measurement
@@ -179,12 +176,3 @@ class scopeControl:
                 self.scope_com.disconnect()
                 break
         outFile.close()
-    
-# control_obj = scopeControl()
-# control_obj.scope_setup_config()
-# control_obj.vertical_config(1, 0.027)
-# time.sleep(10)
-# print("Mean (Max): ", control_obj.get_target_meas_data("Maximum(1)", 3))
-# print("Max (Top): ", control_obj.get_target_meas_data("Top(1)", 2))
-# print(control_obj.get_all_meas_data())
-# control_obj.test_interface()
