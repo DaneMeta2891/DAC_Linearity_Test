@@ -36,6 +36,7 @@ class DAC_Connection_Util:
             print("Unable to detect geortek board")
 
         #Test loop
+        #todo: get rid of test loop
         enable_test_loop = True
         while (enable_test_loop and status):
             userCmd = input("Enter Command: ")
@@ -125,7 +126,7 @@ class DAC_Connection_Util:
         row_offset = 3
         
         #todo, change to 1024 once debug is complete
-        DAC_range = 1024
+        DAC_range = 24
         columns = {"LC_Mode" : {"red":"b", "green":"c", "blue":"d"}, "HC_Mode" : {"red":"e", "green":"f", "blue":"g"}}
         colors = {"red":"ri", "green":"gi", "blue":"bi"}
 
