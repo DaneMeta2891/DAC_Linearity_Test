@@ -6,6 +6,10 @@ from scope_config import scopeControl
 
 #todo: record both max and top values
 
+#dac value to expected current conversion constants
+HC_CONST = 0.33029
+LC_CONST = 0.030665
+
 class dac_test_control:
     def __init__(self):
         self.dac = dacConnectionUtil()
@@ -23,26 +27,37 @@ class dac_test_control:
         '''
         del self.dac, self.scope
 
-    def convert_dacval_to_voltage(self, dac_value:int)->float:
+    def convert_dacval_to_voltage(self, current_mode:str, dac_value:int)->float:
         '''
-        convert a dac value to an expected voltage
+        convert a dac value to an expected voltage (mV)
 
+        HC mode:
+        
+        
+        current_mode (str): DAC current setting
+            "lc" or "hc"
         dac_value (int): dac value to convert to voltage
         '''
+        expected_current = dac_value * (HC_CONST if (current_mode == "hc") else LC_CONST)
+
         return
     
     def convert_voltage_to_current(self, current_mode:str, voltage:float)->float:
         '''
-        convert a measured voltage value to the corresponding current value
+        convert a measured voltage value to the corresponding current value (mA)
 
-        current_mode (str): current mode
+        HC mode:
+        voltage (V) / 0.046 (ohms) = current (a)
+
+        LC mode:
+        voltage (V) / 5.1 (ohms) = current (a)
+
+        current_mode (str): DAC current setting
             "lc" or "hc"
         voltage (float): measured voltage value
         '''
-        #voltage /0.046 HC 
-        #voltage/5.1 LC
 
-        return
+        return voltage/0.046 if (current_mode == "hc") else voltage/5.1
 
     def config_scope_step(self, dac_value:int, channel:int=1):
         '''
@@ -99,7 +114,7 @@ class dac_test_control:
         self.dac.send_command("set ri=0:set gi=0:set bi=0")
 
         for mode in current_mode:
-            inc_coefficient = 0.33 if (mode == "hc") else 0.03
+            inc_coefficient = HC_CONST if (mode == "hc") else LC_CONST
             self.dac.send_command("set lc-lowc=" + str(0 if (mode == "hc") else 1), True, True)
             for color in led_colors:
                 for DAC_value in range(dac_start_index, dac_end_index):
