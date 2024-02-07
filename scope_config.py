@@ -7,6 +7,9 @@ class scopeControl:
     def __init__(self):
         self.scope_com = scopeConnectionUtil()
         self.scope_com.connect()
+    
+    def __del__(self):
+        self.scope_com.disconnect()
 
     def horizontal_config(self, timescale:float):
         '''
@@ -33,7 +36,6 @@ class scopeControl:
         channel (int): the trigger source channel
         voltage (float): the trigger level in volts
         '''
-
         self.scope_com.send(":CHANnel" + str(channel) + ":SCALe " + format(voltage, '0.4f'))
     
     def set_voltage_offset(self, channel:int, voltage:float):
@@ -43,7 +45,6 @@ class scopeControl:
         channel (int): the trigger source channel
         voltage (float): the trigger level in volts
         '''
-
         self.scope_com.send(":CHANnel" + str(channel) + ":OFFSet " + format(voltage, '0.4f'))
     
     def vertical_config(self, channel:int, voltage:float):
@@ -53,7 +54,6 @@ class scopeControl:
         channel (int): the trigger source channel
         voltage (float): the trigger level in volts
         '''
-
         self.set_voltage_scale(1, voltage/3)
         self.set_voltage_offset(1, voltage/3)
         self.trigger_config(1, voltage/2.0)
@@ -82,7 +82,7 @@ class scopeControl:
         self.set_high_res_mode()
 
         #default scale and trigger settings, will be set dependent on expected voltage value per DAC setting
-        self.vertical_config(1, 0.05)
+        self.vertical_config(1, 0.1)
 
         #set timescale to 5ms
         self.horizontal_config(0.005)
@@ -158,21 +158,4 @@ class scopeControl:
         for i in range(4):
             enable = True if (i == ch_to_enable - 1) else False
             self.scope_com.send(":CHANnel" + str(i + 1) + ":DISPlay " + str(int(enable)))
-    
-    def test_interface(self):
-        outFile = open("Scope_Comm.log", "a")
-        while (True):
-            user_cmd = input("Enter Command: ")
-            if (user_cmd != ""):
-                if (user_cmd[0] == 'r'):
-                    outFile.write(user_cmd[1:] + "\n")
-                    scope_return = self.scope_com.send_recv(user_cmd[1:])
-                    outFile.write(scope_return)
-                    print(scope_return)
-                else:
-                    outFile.write(user_cmd)
-                    self.scope_com.send(user_cmd)
-            else:
-                self.scope_com.disconnect()
-                break
-        outFile.close()
+scopeControl().scope_setup_config(1)

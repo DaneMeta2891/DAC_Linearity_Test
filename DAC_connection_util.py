@@ -2,7 +2,7 @@ import serial
 import serial.tools.list_ports
 import time
 
-class DAC_Connection_Util:
+class dacConnectionUtil:
     BAUDRATE = 115200
     TIMEOUT = 1
 
@@ -33,22 +33,9 @@ class DAC_Connection_Util:
             self.s = ser
         else:
             print("Unable to detect geortek board")
-
-        #todo: get rid of test loop
-        enable_test_loop = True
-        while (enable_test_loop and status):
-            userCmd = input("Enter Command: ")
-            if (userCmd != ""):
-                if (userCmd[0] == 'r'):
-                    print(self.extract_return_val(userCmd[1:]))
-                elif (userCmd[0] == 'c'):
-                    print("Cooling LCOS")
-                    self.cool_LCOS()
-                else:
-                    self.send_command(userCmd, True)
-            else:
-                self.s.close()
-                break
+    
+    def __del__(self):
+        self.disconnect()
     
     def send_command(self, command_string, debug_flag=False, loop_until_success = False):
         for attempt_num in range(5):
@@ -121,5 +108,6 @@ class DAC_Connection_Util:
         self.send_command("set en-lcos=1")
         time.sleep(5)
         self.send_command("set mode=5", False, True)
-
-DAC_Connection_Util()
+    
+    def disconnect(self):
+        self.s.close

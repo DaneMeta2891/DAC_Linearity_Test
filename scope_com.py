@@ -15,11 +15,7 @@ class scopeConnectionUtil:
     def __init__(self):
         self.s = None
     
-    #used for context setting
-    def __enter__(self):
-        return self
-    
-    def __exit__(self, *a):
+    def __del__(self):
         self.disconnect()
 
     #using these two functions in place of a config file for HOST_NAME
