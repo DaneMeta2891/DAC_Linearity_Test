@@ -1,38 +1,47 @@
 from argparse import ArgumentParser, ArgumentError
 
-#todo add hostname config option (look into adding additional parsers) to argparser and have it just edit scope_com.py with edit_host funcs
 #todo: add option to configure oscope channel used
 class arg_parser:
     def __init__(self):
         self.parser = ArgumentParser()
         self.parser.add_argument("-d", "--debug", action="store_true", help="Enable debugging output")
-        self.parser.add_argument("-c", "--config", type, help="configure host name")
 
-        self.parser.add_argument("--run_all", action="store_true", help="Run all DACs on LC and HC mode")
+        subparser = self.parser.add_subparsers(help="command:\noptions: run or config", dest="cmd")
 
-        self.parser.add_argument("--current_mode", type=str, choices=["LC","HC"], help="Current mode")
-        self.parser.add_argument("--dac_to_display", type=str, choices=["red","green","blue","ALL"], help="Target DAC")
+        config = subparser.add_parser("config")
+        config.add_argument("--host_name", type=str, help="scope host name, can be found within the scope's IP_config menu")
+
+        run = subparser.add_parser("run")
+
+        run.add_argument("--run_all", action="store_true", help="Run all DACs on LC and HC mode")
+
+        run.add_argument("--current_mode", type=str, choices=["LC","HC"], help="Current mode")
+        run.add_argument("--dac_to_display", type=str, choices=["red","green","blue","ALL"], help="Target DAC")
         
-        self.dac_range_arg = self.parser.add_argument("--dac_range", type=str, help="DAC range, format: ALL or (start_val)-(end_val)")
-        self.display_mode_arg = self.parser.add_argument("--display_mode", type=str, help="Display mode, MIPI or l-grid=(1-8)")        
+        self.dac_range_arg = run.add_argument("--dac_range", type=str, help="DAC range, format: ALL or (start_val)-(end_val)")
+        self.display_mode_arg = run.add_argument("--display_mode", type=str, help="Display mode, MIPI or l-grid=(1-8)")        
 
     def parse_args(self):
         args = self.parser.parse_args()
         test_settings = []
 
-        if args.RUN_ALL:
-            test_settings.append(["LC", "ALL", [0,1023], "l-grid=2", args.debug])
-            test_settings.append(["HC", "ALL", [0,1023], "l-grid=2", args.debug])
-        elif (args.current_mode != None and args.dac_to_display != None and args.dac_range != None and args.display_mode != None):
-            test_settings.append([
-                args.current_mode,
-                args.dac_to_display,
-                self.parse_DAC_range(args.dac_range),
-                self.parse_display_mode(args.display_mode),
-                args.debug
-            ])
-        else:
-            print("Missing --current_mode, --dac_to_display, --dac_range and --display_mode; or --RUN_ALL")
+        if (args.cmd == "run"):
+            if args.RUN_ALL:
+                test_settings.append(["LC", "ALL", [0,1023], "l-grid=2", args.debug])
+                test_settings.append(["HC", "ALL", [0,1023], "l-grid=2", args.debug])
+            elif (args.current_mode != None and args.dac_to_display != None and args.dac_range != None and args.display_mode != None):
+                test_settings.append([
+                    args.current_mode,
+                    args.dac_to_display,
+                    self.parse_DAC_range(args.dac_range),
+                    self.parse_display_mode(args.display_mode),
+                    args.debug
+                ])
+            else:
+                print("Missing either --run_all,\n or parameters for --current_mode, --dac_to_display, --dac_range and --display_mode")
+        elif (args.cmd == "config"):
+            #todo: replace with scope_com.py edit call after debug of new argparse config
+            print(args.host_name)
         return test_settings
 
     #parse DAC range arg string 

@@ -102,4 +102,5 @@ class scopeConnectionUtil:
                 break
         
     def disconnect(self):
-        self.s.close()
+        if (self.s != None):
+            self.s.close()

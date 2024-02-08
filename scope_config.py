@@ -124,7 +124,7 @@ class scopeControl:
                 current_key = data
         return return_dict
 
-    def get_target_meas_data(self, target_meas:str, stat_index:int):
+    def get_target_meas_data(self, target_meas:str, channel:int, stat_index:int):
         '''
         parses out desired statistic from target measurement
 
@@ -134,7 +134,9 @@ class scopeControl:
         example:
         get_meas_data("Maximum(1)", 3) returns mean of max on channel 1
         '''
+
         meas_data = self.scope_com.send_recv(":MEASure:RESults?")
+        target_meas_header = target_meas + "(" + str(channel) + ")"
         value_counter = 0
         target_stat_list = False
         for data in meas_data.split(","):
@@ -145,7 +147,7 @@ class scopeControl:
                 value_counter += 1
             except ValueError:
                 value_counter = 0
-                target_stat_list = True if (data == target_meas) else False
+                target_stat_list = True if (data == target_meas_header) else False
         print("Target measurement not found")
         return -1
 
