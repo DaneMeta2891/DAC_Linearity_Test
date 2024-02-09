@@ -1,6 +1,9 @@
 from scope_com import scopeConnectionUtil
 import time
 
+#scope channel to use
+SCOPE_CHANNEL = 1
+
 #scope configuration object
 class scopeControl:
     INVALID_RETURN = "9.9E+37"
@@ -9,6 +12,9 @@ class scopeControl:
         self.scope_com.connect()
     
     def __del__(self):
+        self.disconnect()
+    
+    def disconnect(self):
         self.scope_com.disconnect()
 
     def horizontal_config(self, timescale:float):
@@ -19,46 +25,42 @@ class scopeControl:
         '''
         self.scope_com.send(":TIMebase:SCAle " + format(timescale, '0.9f'))
 
-    def trigger_config(self, channel:int, level:float):
+    def trigger_config(self, level:float):
         '''
         configures trigger source and level
 
-        channel (int): the trigger source channel
         voltage (float): the trigger level in volts
         '''
-        self.scope_com.send(":TRIGger:SOURce " + "CHAN" + str(channel))
+        self.scope_com.send(":TRIGger:SOURce " + "CHAN" + str(SCOPE_CHANNEL))
         self.scope_com.send(":TRIGger:LEVel " + format(level, '0.4f'))
     
-    def set_voltage_scale(self, channel:int, voltage:float):
+    def set_voltage_scale(self, voltage:float):
         '''
         sets voltage scale
         
-        channel (int): the trigger source channel
         voltage (float): the trigger level in volts
         '''
-        self.scope_com.send(":CHANnel" + str(channel) + ":SCALe " + format(voltage, '0.4f'))
+        self.scope_com.send(":CHANnel" + str(SCOPE_CHANNEL) + ":SCALe " + format(voltage, '0.4f'))
     
-    def set_voltage_offset(self, channel:int, voltage:float):
+    def set_voltage_offset(self, voltage:float):
         '''
         sets voltage offset
 
-        channel (int): the trigger source channel
         voltage (float): the trigger level in volts
         '''
-        self.scope_com.send(":CHANnel" + str(channel) + ":OFFSet " + format(voltage, '0.4f'))
+        self.scope_com.send(":CHANnel" + str(SCOPE_CHANNEL) + ":OFFSet " + format(voltage, '0.4f'))
     
-    def vertical_config(self, channel:int, voltage:float):
+    def vertical_config(self, voltage:float):
         '''
         configures vertical scale/offset
 
-        channel (int): the trigger source channel
         voltage (float): the trigger level in volts
         '''
-        self.set_voltage_scale(1, voltage/3)
-        self.set_voltage_offset(1, voltage/3)
-        self.trigger_config(1, voltage/2.0)
+        self.set_voltage_scale(SCOPE_CHANNEL, voltage/3)
+        self.set_voltage_offset(SCOPE_CHANNEL, voltage/3)
+        self.trigger_config(SCOPE_CHANNEL, voltage/2.0)
     
-    def scope_setup_config(self, channel:int = 1):
+    def scope_setup_config(self):
         '''
         resets scope to default then configures it for data collection
         '''
@@ -66,14 +68,14 @@ class scopeControl:
         self.scope_com.send("*RST")
 
         #config channels
-        self.set_channel_display(channel)
+        self.set_channel_display(SCOPE_CHANNEL)
 
         #clear existing measurements
         self.scope_com.send(":MEASure1:CLEar")
 
         #add measurements
-        self.scope_com.send(":MEASure:VMAX CHANnel1")
-        self.scope_com.send(":MEASure:VTOP CHANnel1")
+        self.scope_com.send(":MEASure:VMAX CHANnel" + str(SCOPE_CHANNEL))
+        self.scope_com.send(":MEASure:VTOP CHANnel" + str(SCOPE_CHANNEL))
 
         #enable stat display
         self.meas_stats_display(True)
@@ -82,7 +84,7 @@ class scopeControl:
         self.set_high_res_mode()
 
         #default scale and trigger settings, will be set dependent on expected voltage value per DAC setting
-        self.vertical_config(1, 0.1)
+        self.vertical_config(0.1)
 
         #set timescale to 5ms
         self.horizontal_config(0.005)
@@ -124,7 +126,7 @@ class scopeControl:
                 current_key = data
         return return_dict
 
-    def get_target_meas_data(self, target_meas:str, channel:int, stat_index:int):
+    def get_target_meas_data(self, target_meas:str, stat_index:int):
         '''
         parses out desired statistic from target measurement
 
@@ -136,7 +138,7 @@ class scopeControl:
         '''
 
         meas_data = self.scope_com.send_recv(":MEASure:RESults?")
-        target_meas_header = target_meas + "(" + str(channel) + ")"
+        target_meas_header = target_meas + "(" + str(SCOPE_CHANNEL) + ")"
         value_counter = 0
         target_stat_list = False
         for data in meas_data.split(","):
@@ -160,4 +162,3 @@ class scopeControl:
         for i in range(4):
             enable = True if (i == ch_to_enable - 1) else False
             self.scope_com.send(":CHANnel" + str(i + 1) + ":DISPlay " + str(int(enable)))
-scopeControl().scope_setup_config(1)

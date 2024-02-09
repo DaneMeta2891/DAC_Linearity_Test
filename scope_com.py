@@ -10,38 +10,13 @@ HOST_NAME = "a-mx4054a-00115"
 #scope communication class
 class scopeConnectionUtil:
     PORT = 5025
-    TIMEOUT = 2
+    TIMEOUT = 5
 
     def __init__(self):
         self.s = None
     
     def __del__(self):
         self.disconnect()
-
-    #using these two functions in place of a config file for HOST_NAME
-    def check_host_name(self, host_name:str):
-        '''
-        check if HOST_NAME is set to host_name, if not changes the variable
-
-        host_name (str): string used to check/config HOST_NAME
-        '''
-        if HOST_NAME != host_name:
-            self.edit_host_name(host_name)
-
-    def edit_host_name(self, host_name:str):
-        '''
-        edits this scripts HOST_NAME constant 
-
-        host_name (str): str to replace HOST_NAME with
-        '''
-        with open("scope_com.py", 'r') as file:
-            script = file.readlines()
-        with open("scope_com.py", 'w') as file:
-            for line in script:
-                if (line.find("HOST_NAME = ") != -1 and line.find("write") == -1):
-                    file.write("HOST_NAME = " + "\"" + host_name + "\"\n")
-                else:
-                    file.write(line)
 
     def get_host_ip(self):
         '''

@@ -34,23 +34,6 @@ class dacConnectionUtil:
         else:
             self.s = None
             print("Unable to detect geortek board")
-        
-        
-        #todo: get rid of test loop
-        enable_test_loop = True
-        while (enable_test_loop and status):
-            userCmd = input("Enter Command: ")
-            if (userCmd != ""):
-                if (userCmd[0] == 'r'):
-                    print(self.extract_return_val(userCmd[1:]))
-                elif (userCmd[0] == 'c'):
-                    print("Cooling LCOS")
-                    self.cool_LCOS()
-                else:
-                    self.send_command(userCmd, True)
-            else:
-                self.s.close()
-                break
     
     def __del__(self):
         self.disconnect()
@@ -130,5 +113,3 @@ class dacConnectionUtil:
     def disconnect(self):
         if (self.s != None):
             self.s.close()
-            
-dacConnectionUtil()
