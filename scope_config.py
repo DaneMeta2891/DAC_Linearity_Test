@@ -13,6 +13,12 @@ class scopeControl:
     
     def __del__(self):
         self.disconnect()
+
+    def check_connected(self):
+        '''
+        return True if connected, False if not
+        '''
+        return True if self.scope_com.s != None else False
     
     def disconnect(self):
         self.scope_com.disconnect()
@@ -56,9 +62,10 @@ class scopeControl:
 
         voltage (float): the trigger level in volts
         '''
-        self.set_voltage_scale(SCOPE_CHANNEL, voltage/3)
-        self.set_voltage_offset(SCOPE_CHANNEL, voltage/3)
-        self.trigger_config(SCOPE_CHANNEL, voltage/2.0)
+        
+        self.set_voltage_scale(voltage/3.0)
+        self.set_voltage_offset(voltage/3.0)
+        self.trigger_config(voltage/2.0)
     
     def scope_setup_config(self):
         '''

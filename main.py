@@ -20,13 +20,19 @@ def edit_const(replacement_val:str, var_name:str, file_name:str):
 
 def main():
     test_settings = arg_parser().parse_args()
+    print(test_settings)
     if (test_settings[0] == "config"):
         if (test_settings[1] != ""):
             edit_const("\"" + test_settings[1] + "\"", "HOST_NAME", "scope_com.py")
-        if (test_settings[2] != ""):
-            edit_const(test_settings[2], "SCOPE_CHANNEL", "scope_config.py")
+        if (test_settings[2] != -1):
+            edit_const(str(test_settings[2]), "SCOPE_CHANNEL", "scope_config.py")
+        if (test_settings[3] != -1):
+            edit_const(str(test_settings[3]), "STEP_TIME_DELAY", "dac_test.py")
     elif (test_settings[0] == "run"):
-        for test in test_settings[1:]:
-            print(test)
+        with dac_test_control() as test_control:
+            if (not(test_control.check_connections())):
+                print("unable to start test")
+                return
+            test_control.dac_test(test_settings[1])
 
 main()

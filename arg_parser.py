@@ -7,15 +7,20 @@ class arg_parser:
         subparser = self.parser.add_subparsers(help="command:\noptions: run, run_all or config", dest="cmd", required=True)
 
         config = subparser.add_parser("config")
-        config.add_argument("--host_name", type=str, default="", help="scope host name, can be found within the scope's IP_config menu")
-        config.add_argument("--channel", type=str, default="", help="scope channel dac probe is connected to")
+        config.add_argument("--host_name", type=str, default="", help="host name, can be found within the scope's IP_config menu")
+        config.add_argument("--channel", type=int, default=-1, help="channel dac probe is connected to")
+        config.add_argument("--step_delay", type=int, default=-1, help="time delay before measurement data is captured per step")
 
         run = subparser.add_parser("run")
-        run.add_argument("--current_mode", type=str, choices=["lc","hc"], help="current mode", required=True)
-        run.add_argument("--dac_to_display", type=str, choices=["red","green","blue","all"], help="target dac", required=True)
+        run.add_argument("--current_mode", type=str, nargs='+', choices=["lc","hc"], help="current mode", required=True)
+        run.add_argument("--leds", type=str, nargs='+', choices=["red","green","blue","all"], help="target dac", required=True)
 
-        self.dac_range_arg = run.add_argument("--dac_range", type=str, help="dac range, format: all or (start_val)-(end_val)", required=True)
+        self.dac_range_arg = run.add_argument("--dac_range", type=str, help="dac range, format: all or (start_val)-(end_val) inclusive", required=True)
         self.display_mode_arg = run.add_argument("--display_mode", type=str, help="display mode, mipi or l-grid=(1-8)", required=True)
+
+        run.add_argument("--output_filename", type=str, default="dac_linearity_output", help="filename of output excel doc")
+
+        run.add_argument("-d", "--debug", action="store_true", help="enable console debug output")
 
         subparser.add_parser("run_all")
 
@@ -24,21 +29,23 @@ class arg_parser:
         test_settings = []
 
         if (args.cmd == "run_all"):
-                test_settings.append("run")
-                test_settings.append(["lc", "all", [0,1023], "l-grid=2"])
-                test_settings.append(["hc", "all", [0,1023], "l-grid=2"])
+            test_settings.append("run")
+            test_settings.append([["lc", "hc"], ["all"], [0,1023], "l-grid=2", "dac_linearity_output", False])
         elif (args.cmd == "run"):
-                test_settings.append("run")
-                test_settings.append([
-                    args.current_mode,
-                    args.dac_to_display,
-                    self.parse_DAC_range(args.dac_range),
-                    self.parse_display_mode(args.display_mode),
-                ])
+            test_settings.append("run")
+            test_settings.append([
+                args.current_mode,
+                args.leds,
+                self.parse_DAC_range(args.dac_range),
+                self.parse_display_mode(args.display_mode),
+                args.output_filename,
+                args.debug
+            ])
         elif (args.cmd == "config"):
             test_settings.append("config")
             test_settings.append(args.host_name)
             test_settings.append(args.channel)
+            test_settings.append(args.step_delay)
         return test_settings
 
     #parse DAC range arg string 

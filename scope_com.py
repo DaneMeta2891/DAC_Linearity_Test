@@ -1,9 +1,6 @@
 import socket
 from socket import timeout
 
-#part of *IDN return string
-VALID_IDS = ["MSO-X 4054A"]
-
 #scope host name, used to get the IP address of the scope
 HOST_NAME = "a-mx4054a-00115"
 
@@ -25,22 +22,24 @@ class scopeConnectionUtil:
         try:
             return socket.gethostbyname(HOST_NAME)
         except Exception as error:
-            print("error getting scope IP")
-            print("socket error:", error)
+            print("error getting scope ip address: ", error)
+            return None
 
     def connect(self):
         '''
         connects to scope with IP returned from get_host_ip()
         '''
         scope_IP = self.get_host_ip()
-        try:
-            self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.s.settimeout(self.TIMEOUT)
-            self.s.connect((scope_IP, self.PORT))
-            return True
-        except Exception as error:
-            self.disconnect()
-            print("connection error: ", error)
+        if (scope_IP != None):
+            try:
+                self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.s.settimeout(self.TIMEOUT)
+                self.s.connect((scope_IP, self.PORT))
+                return True
+            except Exception as error:
+                self.disconnect()
+                self.s = None
+                print("connection error: ", error)
         return False
     
     def send(self, msg:str):

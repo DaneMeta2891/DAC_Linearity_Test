@@ -34,18 +34,32 @@ class dacConnectionUtil:
         else:
             self.s = None
             print("Unable to detect geortek board")
-    
+
     def __del__(self):
         self.disconnect()
     
-    def send_command(self, command_string, debug_flag=False, loop_until_success = False):
+    def check_connected(self):
+        '''
+        returns true if dac was detected, false if not
+        '''
+        return False if self.s == None else True
+    
+    def send_command(self, command:str, debug_flag:bool=False, loop_until_success:bool=False):
+        '''
+        sends command or set of commands to dac
+
+        command (str): command to send to dac
+        debug_flag (bool): if true prints command return to console
+        loop_until_success (bool): if true will attempt to send command up to 5 times if ack is not detected in return
+        '''
         for attempt_num in range(5):
             self.s.flush()
-            self.s.write((":" + command_string + "\r\n").encode())
+            self.s.write((command + "\r\n").encode())
 
             command_returns = self.s.readlines()
 
             if (debug_flag):
+                print(command)
                 print(command_returns)
 
             #check for errors the return or continue to retry until attempt limit is reached
@@ -60,9 +74,14 @@ class dacConnectionUtil:
             #short delay before second attempt
             time.sleep(1)
     
-    def extract_return_val(self, command_string):
+    def extract_return_val(self, command:str):
+        '''
+        get return value from command_string
+
+        command_string (str): command to send to dac
+        '''
         self.s.flush()
-        self.s.write((":" + command_string + "\r\n").encode())
+        self.s.write((command + "\r\n").encode())
         try:
             return self.s.readlines()[0].decode().strip()
         except:
@@ -79,7 +98,7 @@ class dacConnectionUtil:
         '''
         for _ in range(5):
             try:
-                temp = float(self.extract_return_val("get temp-lc"))
+                temp = float(self.extract_return_val(":get temp-lc"))
                 if (temp < 0):
                     print("ValueError: invalid return value from \'get temp-lc\'")
                 else:
@@ -99,17 +118,19 @@ class dacConnectionUtil:
         '''
         print("Disabling LCOS for " + str(disable_time) + " seconds")
         #disable current
-        self.send_command("set ri=0:set bi=0:set gi=0")
+        self.send_command(":set ri=0:set bi=0:set gi=0")
 
         #disable LCOS then wait until it cools down
-        self.send_command("set en-lcos=0")
+        self.send_command(":set en-lcos=0")
         time.sleep(disable_time)
 
         #enable LCOS then wait until it's ready to receive commands again
-        self.send_command("set en-lcos=1")
+        self.send_command(":set en-lcos=1")
         time.sleep(5)
-        self.send_command("set mode=5", False, True)
+        self.send_command(":set mode=5", False, True)
     
     def disconnect(self):
         if (self.s != None):
+            #disable leds and close connection
+            self.send_command(":set mode=5")
             self.s.close()
