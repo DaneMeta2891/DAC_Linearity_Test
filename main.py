@@ -20,7 +20,6 @@ def edit_const(replacement_val:str, var_name:str, file_name:str):
 
 def main():
     test_settings = arg_parser().parse_args()
-    print(test_settings)
     if (test_settings[0] == "config"):
         if (test_settings[1] != ""):
             edit_const("\"" + test_settings[1] + "\"", "HOST_NAME", "scope_com.py")

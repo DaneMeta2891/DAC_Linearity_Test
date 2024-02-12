@@ -266,5 +266,4 @@ class dac_test_control:
                         ws[columns[mode][color + "_" + meas + "_Current"] + str(row_offset + dac_value - dac_start_index)] = self.convert_voltage_to_current(mode, meas_return)
                     
                 self.dac.send_command(":set " + colors[color] + "=0", debug)
-        
-        wb.save(output_file_name + ".xlsx")
+                wb.save(output_file_name + ".xlsx")

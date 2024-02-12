@@ -16,13 +16,14 @@ class arg_parser:
         run.add_argument("--leds", type=str, nargs='+', choices=["red","green","blue","all"], help="target dac", required=True)
 
         self.dac_range_arg = run.add_argument("--dac_range", type=str, help="dac range, format: all or (start_val)-(end_val) inclusive", required=True)
-        self.display_mode_arg = run.add_argument("--display_mode", type=str, help="display mode, mipi or l-grid=(1-8)", required=True)
+        self.display_mode_arg = run.add_argument("--display_mode", type=str, default="l-grid=2", help="display mode, mipi or l-grid=(1-8)")
 
         run.add_argument("--output_filename", type=str, default="dac_linearity_output", help="filename of output excel doc")
 
         run.add_argument("-d", "--debug", action="store_true", help="enable console debug output")
 
-        subparser.add_parser("run_all")
+        run_all = subparser.add_parser("run_all")
+        run_all.add_argument("-d", "--debug", action="store_true", help="enable console debug output")
 
     def parse_args(self):
         args = self.parser.parse_args()
@@ -30,7 +31,7 @@ class arg_parser:
 
         if (args.cmd == "run_all"):
             test_settings.append("run")
-            test_settings.append([["lc", "hc"], ["all"], [0,1023], "l-grid=2", "dac_linearity_output", False])
+            test_settings.append([["lc", "hc"], ["all"], [0,1023], "l-grid=2", "dac_linearity_output", args.debug])
         elif (args.cmd == "run"):
             test_settings.append("run")
             test_settings.append([
