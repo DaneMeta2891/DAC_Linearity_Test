@@ -6,7 +6,7 @@ from dac_connection_util import dacConnectionUtil
 from scope_config import scopeControl
 
 #time delay before gettig mean value per setp
-STEP_TIME_DELAY = 30
+STEP_TIME_DELAY = 10
 
 #dac value to expected current conversion constants
 HC_CONST = 0.33029
@@ -14,7 +14,7 @@ LC_CONST = 0.030665
 
 #todo fix/verify HC_RES
 #r-sense values
-HC_RES = 0.5
+HC_RES = 0.46
 LC_RES = 5.1
 
 class dac_test_control:
@@ -225,30 +225,32 @@ class dac_test_control:
             ws['a' + str(i - dac_start_index + row_offset)] = str(i)
 
         #used in test loop
-        colors = {"red":"ri", "green":"gi", "blue":"bi"}
+        colors = {"red":"r", "green":"g", "blue":"b"}
         columns = self.generate_column_dict(current_mode, led_colors)
 
         #iterate through all possible permutations to fill out spreadsheet
         self.dac.send_command(":set ri=0;:set gi=0;:set bi=0", debug)
+        self.dac.send_command(":set r-l=0;:set g-l=0;:set b-l=0", debug)
 
         for mode in current_mode:
             inc_coefficient = HC_CONST if (mode == "hc") else LC_CONST
             self.dac.send_command(":set lc-lowc=" + str(0 if (mode == "hc") else 1), debug, True)
             for color in led_colors:
+                self.dac.send_command(":set " + colors[color] + "-l=1", debug)
                 for dac_value in range(dac_start_index, dac_end_index + 1):
                     print("current step:", mode, color, dac_value)
                     
-                    #cool LCOS if temp is above threshold every 12 steps
+                    #cool LCOS if temp is above threshold every 8 steps
                     if (dac_value % 8 == 0):
                         if (self.dac.check_LCOS_temp()):
                             self.dac.cool_LCOS()
 
                     #set current value for given DAC value and record current/DAC value
-                    self.dac.send_command(":set " + colors[color] + "=" + format(inc_coefficient * dac_value, '0.2f'), debug)
+                    self.dac.send_command(":set " + colors[color] + "i=" + format(inc_coefficient * dac_value, '0.2f'), debug)
 
                     #if debug is flagged check dac value
                     if (debug):
-                        self.check_dac_value(dac_value, colors[color])
+                        self.check_dac_value(dac_value, colors[color] + "i")
                     
                     self.config_scope_step(mode, dac_value)
                     time.sleep(STEP_TIME_DELAY)
@@ -264,6 +266,7 @@ class dac_test_control:
 
                         ws[columns[mode][color + "_" + meas] + str(row_offset + dac_value - dac_start_index)] = meas_return_mV
                         ws[columns[mode][color + "_" + meas + "_Current"] + str(row_offset + dac_value - dac_start_index)] = self.convert_voltage_to_current(mode, meas_return)
-                    
-                self.dac.send_command(":set " + colors[color] + "=0", debug)
-                wb.save(output_file_name + ".xlsx")
+                    wb.save(output_file_name + ".xlsx")
+                self.dac.send_command(":set " + colors[color] + "i=0", debug)
+                self.dac.send_command(":set " + colors[color] + "-l=0", debug)
+                
