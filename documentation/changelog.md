@@ -10,3 +10,7 @@
 
 ## V1.00.2
     - added led-disable commands for all non-active LEDs in any given test step
+
+## V1.00.3
+    - added checking for invalid measurement return value
+    - fixed issue with cool_lcos(), was not re-enabling LEDs after cooling

@@ -88,7 +88,7 @@ class dacConnectionUtil:
             print("Output format not recognized")
             return "0"
     
-    def check_LCOS_temp(self, temp_threshold:float=60.0):
+    def check_LCOS_temp(self, temp_threshold:float=60.0, debug:bool = False):
         '''
         checks LCOS temp
 
@@ -99,6 +99,8 @@ class dacConnectionUtil:
         for _ in range(5):
             try:
                 temp = float(self.extract_return_val(":get temp-lc"))
+                if (debug):
+                    print("LCOS temp:", debug)
                 if (temp < 0):
                     print("ValueError: invalid return value from \'get temp-lc\'")
                 else:
@@ -110,15 +112,16 @@ class dacConnectionUtil:
         else:
             return False
 
-    def cool_LCOS(self, disable_time:int = 30):
+    def cool_LCOS(self, display_mode, disable_time:int = 60):
         '''
         disables LCOS and waits for disable_time to allow it to cool
 
         disable_time (int): number of seconds to disable LCOS for
         '''
-        print("Disabling LCOS for " + str(disable_time) + " seconds")
+        print("disabling LCOS for " + str(disable_time) + " seconds")
         #disable current
         self.send_command(":set ri=0:set bi=0:set gi=0")
+        self.send_command(":set r-l=0;:set g-l=0;:set b-l=0")
 
         #disable LCOS then wait until it cools down
         self.send_command(":set en-lcos=0")
@@ -128,6 +131,11 @@ class dacConnectionUtil:
         self.send_command(":set en-lcos=1")
         time.sleep(5)
         self.send_command(":set mode=5", False, True)
+        self.send_command(":set " + display_mode, False, True)
+
+        #disable all current and LEDs
+        self.send_command(":set ri=0:set bi=0:set gi=0")
+        self.send_command(":set r-l=0;:set g-l=0;:set b-l=0")
     
     def disconnect(self):
         if (self.s != None):

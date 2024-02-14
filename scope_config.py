@@ -116,23 +116,6 @@ class scopeControl:
         '''
         self.scope_com.send(":ACQuire:TYPE HRESolution")
 
-    def get_all_meas_data(self):
-        '''
-        parses out all meas stats and returns dictionary
-        '''
-        meas_data = self.scope_com.send_recv(":MEASure:RESults?")
-        return_dict = dict()
-        current_key = ""
-        for data in meas_data.split(","):
-            try:
-                converted_data = float(data)
-                if (current_key != ""):
-                    return_dict[current_key].append(converted_data)
-            except ValueError:
-                return_dict[data] = list()
-                current_key = data
-        return return_dict
-
     def get_target_meas_data(self, target_meas:str, stat_index:int):
         '''
         parses out desired statistic from target measurement
@@ -150,7 +133,10 @@ class scopeControl:
         target_stat_list = False
         for data in meas_data.split(","):
             try:
-                converted_data = float(data)
+                if (data != self.INVALID_RETURN):
+                    converted_data = float(data)
+                else:
+                    converted_data = None
                 if (value_counter == stat_index and target_stat_list):
                     return converted_data
                 value_counter += 1

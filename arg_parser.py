@@ -56,7 +56,7 @@ class arg_parser:
         dac_range = range_str.split("-")
         if (not(len(dac_range) == 2 and dac_range[0].isdigit() and dac_range[1].isdigit())):
             raise ArgumentError(self.dac_range_arg, "Error, invalid DAC range format")
-        if (dac_range != sorted(dac_range)):
+        if (int(dac_range[0]) > int(dac_range[1])):
             raise ArgumentError(self.dac_range_arg, "Error, DAC range values out of order")
         for i in range(len(dac_range)):
             dac_range[i] = int(dac_range[i])
